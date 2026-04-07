@@ -6,6 +6,8 @@ import transactionRoutes from "./routes/transactionRoutes.js";
 
 dotenv.config();
 
+process.env.TZ = "Asia/Jakarta";
+
 const app = express();
 
 app.use(cors());
