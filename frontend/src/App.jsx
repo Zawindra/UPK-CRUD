@@ -6,7 +6,10 @@ function App() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   
-  // Fitur Dark Mode State
+  // State untuk Custom Delete Modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [idToDelete, setIdToDelete] = useState(null);
+
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
@@ -19,7 +22,6 @@ function App() {
     date: new Date().toISOString().split("T")[0],
   });
 
-  // Effect untuk Dark Mode
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -84,27 +86,64 @@ function App() {
     });
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Hapus catatan ini?")) {
-      await deleteTransaction(id);
-      loadData();
-    }
+  // Fungsi untuk memicu Modal
+  const triggerDelete = (id) => {
+    setIdToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  // Fungsi eksekusi hapus yang sebenarnya
+  const confirmDelete = async () => {
+    await deleteTransaction(idToDelete);
+    setShowDeleteModal(false);
+    setIdToDelete(null);
+    loadData();
   };
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-slate-100' : 'bg-[#F8FAFC] text-slate-700'} p-6 lg:p-12`}>
+      
+      {/* CUSTOM DELETE MODAL */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`w-full max-w-sm p-8 rounded-3xl shadow-2xl transform transition-all animate-in zoom-in-95 duration-200 ${darkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white'}`}>
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-rose-100 text-rose-600 text-3xl mb-4">
+                ⚠️
+              </div>
+              <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Konfirmasi Hapus</h3>
+              <p className="text-slate-500 mb-8 text-sm">Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.</p>
+              
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowDeleteModal(false)}
+                  className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-semibold shadow-lg shadow-rose-200 dark:shadow-none transition-all"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto">
         
         {/* Header Section */}
         <header className="mb-10 flex justify-between items-center">
-          <div className="text-left">
+          <div>
             <h1 className={`text-4xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               JO<span className="text-blue-500">PersonalFinance.</span>
             </h1>
-            <p className="text-slate-500 mt-2 font-medium italic">"Make Big Money."</p>
+            <p className="text-slate-500 mt-2 font-medium italic italic">"Make Big Money."</p>
           </div>
           
-          {/* Dark Mode Toggle Icon */}
           <button 
             onClick={() => setDarkMode(!darkMode)}
             className={`p-3 rounded-2xl transition-all shadow-sm ${darkMode ? 'bg-slate-800 text-yellow-400' : 'bg-white text-slate-900 border border-slate-100'}`}
@@ -129,7 +168,7 @@ function App() {
 
           <div className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'} p-6 rounded-2xl shadow-sm border-l-4 border-rose-500`}>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Pengeluaran</p>
-            <h3 className="text-2xl font-bold mt-2 text-rose-500">- Rp {totalPengeluaran.toLocaleString('id-ID')}</h3>
+            <h3 className="text-2xl font-bold mt-2 text-rose-600">- Rp {totalPengeluaran.toLocaleString('id-ID')}</h3>
           </div>
         </div>
 
@@ -163,7 +202,6 @@ function App() {
                   />
                 </div>
                 
-                {/* Custom Smooth Type Switcher */}
                 <div>
                   <label className="text-sm font-medium text-slate-500 block mb-2">Tipe Transaksi</label>
                   <div className={`flex p-1 rounded-xl border ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
@@ -239,7 +277,7 @@ function App() {
                           <button onClick={() => handleEdit(t)} className="p-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-all">
                             ✏️
                           </button>
-                          <button onClick={() => handleDelete(t.id)} className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all">
+                          <button onClick={() => triggerDelete(t.id)} className="p-2 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all">
                             🗑️
                           </button>
                         </div>
@@ -248,12 +286,6 @@ function App() {
                   ))}
                 </tbody>
               </table>
-              {transactions.length === 0 && (
-                <div className="p-20 text-center text-slate-500">
-                  <div className="text-5xl mb-4 opacity-20">🍃</div>
-                  <p className="font-medium italic">Belum Ada Riwayat Transaksi.</p>
-                </div>
-              )}
             </div>
           </div>
 
